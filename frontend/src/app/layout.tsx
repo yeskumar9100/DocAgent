@@ -1,7 +1,8 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { ConditionalShell } from './ConditionalShell';
 import { ThemeProvider } from '@/context/ThemeProvider';
+import { AuthProvider } from '@/context/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'DocAgent — AI Document Assistant',
@@ -13,6 +14,14 @@ export const metadata: Metadata = {
     type: 'website',
   },
 };
+
+// Required for env(safe-area-inset-*) to work on iOS Safari (gesture bar phones)
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -31,7 +40,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>
-          <ConditionalShell>{children}</ConditionalShell>
+          <AuthProvider>
+            <ConditionalShell>{children}</ConditionalShell>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

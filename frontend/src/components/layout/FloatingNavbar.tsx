@@ -51,10 +51,13 @@ export function FloatingNavbar() {
     <nav
       id="floating-nav"
       className={`fixed left-1/2 -translate-x-1/2 z-50 flex items-center justify-center liquid-glass shadow-xl transform transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] border border-white/30 rounded-full ${
-        isScrolled 
-          ? 'bottom-8 py-2 px-4 gap-4 shadow-[0_8px_32px_rgba(70,72,212,0.08)]' 
-          : 'bottom-6 py-3 px-6 gap-6 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+        isScrolled
+          ? 'py-2 px-4 gap-4 shadow-[0_8px_32px_rgba(70,72,212,0.08)]'
+          : 'py-3 px-6 gap-6 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
       }`}
+      style={{
+        bottom: `calc(${isScrolled ? '2rem' : '1.5rem'} + env(safe-area-inset-bottom, 0px))`,
+      }}
     >
       {NAV_ITEMS.map(({ href, label, icon }) => {
         const isActive = pathname === href || pathname.startsWith(href + '/');

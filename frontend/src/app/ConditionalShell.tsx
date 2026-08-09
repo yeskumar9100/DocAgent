@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { usePathname } from 'next/navigation';
 import { FloatingNavbar } from '@/components/layout/FloatingNavbar';
@@ -67,6 +67,8 @@ export function ConditionalShell({ children }: { children: React.ReactNode }) {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
+            /* Reserve space at bottom for floating nav + safe-area gesture bar */
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           }}
         >
           {children}

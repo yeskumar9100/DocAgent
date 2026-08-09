@@ -163,7 +163,8 @@ export function DocumentLibrary() {
       </header>
 
       {/* Content Area (Scrollable with split layout) */}
-      <div className="flex-1 px-8 pb-28 overflow-y-auto">
+      {/* pb-safe = nav bar height (~52px) + bottom-6 gap (24px) + safe-area + extra clearance = ~140px */}
+      <div className="flex-1 px-4 sm:px-8 overflow-y-auto" style={{ paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 animate-fade-in">
           
           {/* Left Column (Documents List) - 75% */}
@@ -205,8 +206,9 @@ export function DocumentLibrary() {
             ) : (
               /* Document List Container (Glass Card) */
               <div className="glass-card rounded-4xl w-full p-2 flex flex-col" style={{ border: '1px solid var(--color-border)' }}>
-                {/* Table Header */}
-                <div className="grid grid-cols-[auto_1fr_120px_140px_160px_180px] gap-4 px-6 py-4 items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+
+                {/* ── Table Header: hidden on mobile, shown sm+ ── */}
+                <div className="hidden sm:grid grid-cols-[auto_1fr_100px_130px_130px_160px] gap-3 px-4 py-4 items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
                   <div className="w-5 flex items-center justify-center">
                     <input
                       type="checkbox"
@@ -222,6 +224,17 @@ export function DocumentLibrary() {
                   <div className="text-right">Actions</div>
                 </div>
 
+                {/* Mobile select-all row */}
+                <div className="flex sm:hidden items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                  <input
+                    type="checkbox"
+                    checked={selected.size === docs.length}
+                    onChange={toggleAll}
+                    className="form-checkbox h-4 w-4 rounded border-slate-300 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Select All</span>
+                </div>
+
                 {/* Table Body */}
                 <div className="flex flex-col gap-1.5">
                   {docs.map((doc) => {
@@ -231,92 +244,123 @@ export function DocumentLibrary() {
                       <div
                         key={doc.id}
                         onClick={() => toggleSelect(doc.id)}
-                        className={`grid grid-cols-[auto_1fr_120px_140px_160px_180px] gap-4 px-6 py-4 items-center rounded-3xl transition-all border cursor-pointer group relative ${
-                          isSelected
-                            ? 'border-blue-400/30 shadow-sm'
-                            : 'border-transparent'
+                        className={`transition-all border cursor-pointer rounded-3xl ${
+                          isSelected ? 'border-blue-400/30 shadow-sm' : 'border-transparent'
                         }`}
                         style={{
-                          background: isSelected
-                            ? 'var(--color-bg-card-hover)'
-                            : 'var(--glass-bg-card)',
+                          background: isSelected ? 'var(--color-bg-card-hover)' : 'var(--glass-bg-card)',
                           opacity: isDeleting ? 0.4 : 1,
                           pointerEvents: isDeleting ? 'none' : 'auto',
                           backdropFilter: 'blur(12px)',
                           WebkitBackdropFilter: 'blur(12px)',
                         }}
                       >
-                        {/* Checkbox */}
-                        <div className="w-5 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelect(doc.id)}
-                            className="form-checkbox h-4 w-4 rounded border-slate-300 text-brand-500 focus:ring-brand-500 bg-white/80 cursor-pointer"
-                          />
+                        {/* ── DESKTOP ROW (sm+): original grid layout ── */}
+                        <div className="hidden sm:grid grid-cols-[auto_1fr_100px_130px_130px_160px] gap-3 px-4 py-4 items-center">
+                          {/* Checkbox */}
+                          <div className="w-5 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                            <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(doc.id)}
+                              className="form-checkbox h-4 w-4 rounded border-slate-300 bg-white/80 cursor-pointer" />
+                          </div>
+                          {/* File name + icon */}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-500 border border-blue-100 shadow-sm">
+                              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586a2 2 0 011.414.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-sm font-semibold text-slate-800 truncate" title={doc.original_filename}>{doc.original_filename}</h3>
+                              <p className="text-xs text-slate-500 mt-0.5 font-medium truncate">{doc.embedding_provider}</p>
+                            </div>
+                          </div>
+                          {/* Size */}
+                          <div className="text-sm text-slate-600 font-medium">{formatSize(doc.file_size)}</div>
+                          {/* Status */}
+                          <div>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold status-badge">
+                              {doc.status === 'ready' ? 'Processed' : doc.status === 'processing' ? 'Processing' : 'Error'}
+                            </span>
+                            {doc.status === 'ready' && <p className="text-[11px] text-slate-500 mt-1 ml-1 font-medium">{doc.chunk_count} chunks</p>}
+                          </div>
+                          {/* Uploaded */}
+                          <div className="text-sm text-slate-600 font-medium">{formatDate(doc.created_at)}</div>
+                          {/* Actions */}
+                          <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button onClick={() => handleChatWithOne(doc)} disabled={doc.status !== 'ready'}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all border"
+                              style={{ background: 'var(--color-accent-bg)', color: 'var(--color-accent)', borderColor: 'var(--color-accent-border)' }}>
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              Chat
+                            </button>
+                            <button onClick={() => handleDelete(doc)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" aria-label="Delete">
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
 
-                        {/* File Name & Icon */}
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-500 border border-blue-100 shadow-sm">
-                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        {/* ── MOBILE CARD (< sm): stacked layout, no grid overflow ── */}
+                        <div className="flex sm:hidden items-start gap-3 px-4 py-4">
+                          {/* Checkbox — fixed width, never shrinks */}
+                          <div className="flex-shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
+                            <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(doc.id)}
+                              className="form-checkbox h-4 w-4 rounded border-slate-300 bg-white/80 cursor-pointer" />
+                          </div>
+
+                          {/* File icon — fixed size, never shrinks */}
+                          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100 shadow-sm">
+                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586a2 2 0 011.414.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                             </svg>
                           </div>
-                          <div className="truncate">
+
+                          {/* Text content — takes remaining space, truncates properly */}
+                          <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-semibold text-slate-800 truncate" title={doc.original_filename}>
                               {doc.original_filename}
                             </h3>
                             <p className="text-xs text-slate-500 mt-0.5 font-medium">{doc.embedding_provider}</p>
+                            {/* Meta row: size · status · time */}
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                              <span className="text-[11px] text-slate-500 font-medium">{formatSize(doc.file_size)}</span>
+                              <span className="text-slate-300">·</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold status-badge">
+                                {doc.status === 'ready' ? 'Processed' : doc.status === 'processing' ? 'Processing' : 'Error'}
+                              </span>
+                              {doc.status === 'ready' && (
+                                <span className="text-[11px] text-slate-400 font-medium">{doc.chunk_count} chunks</span>
+                              )}
+                              <span className="text-slate-300">·</span>
+                              <span className="text-[11px] text-slate-500 font-medium">{formatDate(doc.created_at)}</span>
+                            </div>
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => handleChatWithOne(doc)}
+                                disabled={doc.status !== 'ready'}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border"
+                                style={{ background: 'var(--color-accent-bg)', color: 'var(--color-accent)', borderColor: 'var(--color-accent-border)' }}
+                              >
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                Chat
+                              </button>
+                              <button
+                                onClick={() => handleDelete(doc)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                aria-label="Delete"
+                              >
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Size */}
-                        <div className="text-sm text-slate-600 font-medium">
-                          {formatSize(doc.file_size)}
-                        </div>
-
-                        {/* Status */}
-                        <div>
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold status-badge backdrop-blur-sm">
-                            {doc.status === 'ready' ? 'Processed' : doc.status === 'processing' ? 'Processing' : 'Error'}
-                          </span>
-                          {doc.status === 'ready' && (
-                            <p className="text-[11px] text-slate-500 mt-1 ml-1 font-medium">{doc.chunk_count} chunks</p>
-                          )}
-                        </div>
-
-                        {/* Uploaded Time */}
-                        <div className="text-sm text-slate-600 font-medium">
-                          {formatDate(doc.created_at)}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleChatWithOne(doc)}
-                            disabled={doc.status !== 'ready'}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all border"
-                            style={{
-                              background: 'var(--color-accent-bg)',
-                              color: 'var(--color-accent)',
-                              borderColor: 'var(--color-accent-border)',
-                            }}
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" strokeLinecap="round" strokeLinejoin="round"></path>
-                            </svg>
-                            Chat
-                          </button>
-                          <button
-                            onClick={() => handleDelete(doc)}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            aria-label="Delete document"
-                          >
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round"></path>
-                            </svg>
-                          </button>
                         </div>
                       </div>
                     );
