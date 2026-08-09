@@ -42,19 +42,16 @@ export function Sidebar() {
       {/* Logo / Brand */}
       <div
         className="flex items-center gap-3 px-6 py-5"
-        style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.6)' }}
+        style={{ borderBottom: '1px solid var(--color-border)' }}
       >
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: '#0066ff' }}
-        >
-          <FileText className="w-5 h-5 text-white" />
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-white/20">
+          <img src="/logo.png" alt="DocAgent Logo" className="w-full h-full object-cover" />
         </div>
         <div>
-          <p className="text-sm font-bold leading-none tracking-tight" style={{ color: '#0050cb' }}>
+          <p className="text-sm font-bold leading-none tracking-tight" style={{ color: 'var(--color-accent)' }}>
             DocAgent
           </p>
-          <p className="text-xs leading-none mt-1" style={{ color: '#64748b' }}>
+          <p className="text-xs leading-none mt-1" style={{ color: 'var(--color-text-muted)' }}>
             AI Assistant
           </p>
         </div>

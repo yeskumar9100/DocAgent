@@ -91,13 +91,12 @@ export default function LandingPage() {
           transition: 'all 0.3s ease',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            className="material-symbols-outlined"
-            style={{ color: C.primary, fontSize: 30, fontVariationSettings: "'FILL' 1" }}
-          >
-            description
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img
+            src="/logo.png"
+            alt="DocAgent Logo"
+            style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }}
+          />
           <span style={{ fontSize: 22, fontWeight: 700, color: C.primary, letterSpacing: '-0.02em' }}>
             DocAgent
           </span>
