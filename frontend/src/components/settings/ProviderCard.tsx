@@ -271,7 +271,6 @@ export function ProviderCard({ provider, onUpdate, onDelete, dragHandleProps }: 
                         setError(null);
                       }
                     }}
-                    autoFocus
                   />
                   <button
                     type="button"

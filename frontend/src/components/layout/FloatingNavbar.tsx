@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme } from '@/context/ThemeProvider';
-import { Sun, Moon } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Home', icon: 'dashboard' },
@@ -25,10 +23,12 @@ export function FloatingNavbar() {
       const target = e.target as HTMLElement;
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          // If scrolling window or container
-          const scrollTop = target === (document as any) || target === document.documentElement || target === document.body
-            ? window.scrollY
-            : (target.scrollTop || 0);
+          const scrollTop =
+            target === (document as any) ||
+            target === document.documentElement ||
+            target === document.body
+              ? window.scrollY
+              : target.scrollTop || 0;
 
           setIsScrolled(scrollTop >= 100);
           ticking = false;
@@ -37,26 +37,20 @@ export function FloatingNavbar() {
       }
     };
 
-    // Capture scrolling globally across any containers (e.g. overflow-y-auto elements)
     window.addEventListener('scroll', handleScroll, true);
     return () => window.removeEventListener('scroll', handleScroll, true);
   }, []);
 
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
-  const toggleTheme = () => setTheme(isDark ? 'light' : 'dark');
-
   return (
     <nav
       id="floating-nav"
-      className={`fixed left-1/2 -translate-x-1/2 z-50 flex items-center justify-center liquid-glass shadow-xl transform transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] border border-white/30 rounded-full ${
+      className={`fixed left-1/2 -translate-x-1/2 z-50 flex items-center justify-center liquid-glass border border-white/40 shadow-lg rounded-full transition-all duration-300 ease-out ${
         isScrolled
-          ? 'py-2 px-4 gap-4 shadow-[0_8px_32px_rgba(70,72,212,0.08)]'
-          : 'py-3 px-6 gap-6 shadow-[0_4px_16px_rgba(0,0,0,0.03)]'
+          ? 'py-1.5 px-2.5 gap-1.5 sm:gap-2 shadow-[0_8px_32px_rgba(70,72,212,0.12)]'
+          : 'py-2 px-3 gap-2 sm:gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.06)]'
       }`}
       style={{
-        bottom: `calc(${isScrolled ? '2rem' : '1.5rem'} + env(safe-area-inset-bottom, 0px))`,
+        bottom: `calc(${isScrolled ? '1.25rem' : '1.5rem'} + env(safe-area-inset-bottom, 0px))`,
       }}
     >
       {NAV_ITEMS.map(({ href, label, icon }) => {
@@ -66,56 +60,26 @@ export function FloatingNavbar() {
           <Link
             key={href}
             href={href}
-            className={`group flex items-center justify-center transition-all duration-300 ease-out select-none text-decoration-none ${
-              isActive ? 'text-[#8B5CF6] font-bold' : 'text-slate-500 hover:text-slate-800'
+            aria-label={label}
+            title={label}
+            className={`group relative flex items-center justify-center w-11 h-11 rounded-full transition-all duration-300 ease-out select-none text-decoration-none ${
+              isActive
+                ? 'bg-[#8B5CF6] text-white shadow-[0_4px_14px_rgba(139,92,246,0.45)] scale-105'
+                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70 active:scale-95'
             }`}
           >
-            {/* Icon Container with active-state violet highlight */}
-            <div
-              className={`p-2 rounded-full transition-all duration-300 flex items-center justify-center ${
-                isActive
-                  ? 'bg-[#8B5CF6] text-white shadow-[0_0_15px_rgba(139,92,246,0.5)] scale-105'
-                  : 'group-hover:bg-slate-100/60'
-              }`}
-            >
-              <span 
-                className="material-symbols-outlined select-none" 
-                style={{ 
-                  fontSize: '20px', 
-                  fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" 
-                }}
-              >
-                {icon}
-              </span>
-            </div>
-
-            {/* Label with layout animate behavior (expands on hover/active/expanded state) */}
             <span
-              className={`font-sans text-[13px] tracking-wide font-semibold whitespace-nowrap transition-all duration-300 ease-out select-none ${
-                isActive || !isScrolled
-                  ? 'max-w-[80px] opacity-100 ml-2'
-                  : 'max-w-0 opacity-0 overflow-hidden ml-0'
-              }`}
+              className="material-symbols-outlined select-none transition-transform duration-200 group-hover:scale-110"
+              style={{
+                fontSize: '22px',
+                fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+              }}
             >
-              {label}
+              {icon}
             </span>
           </Link>
         );
       })}
-      {/* Quick theme toggle */}
-      <button
-        onClick={toggleTheme}
-        aria-label="Toggle theme"
-        className="group flex items-center justify-center p-2 rounded-full transition-all duration-300 cursor-pointer"
-        style={{
-          background: isDark ? 'rgba(77,148,255,0.12)' : 'rgba(0,102,255,0.07)',
-          border: isDark ? '1px solid rgba(77,148,255,0.25)' : '1px solid rgba(0,102,255,0.15)',
-        }}
-      >
-        {isDark
-          ? <Sun className="w-4 h-4" style={{ color: '#fbbf24' }} />
-          : <Moon className="w-4 h-4" style={{ color: '#0066ff' }} />}
-      </button>
     </nav>
   );
 }
