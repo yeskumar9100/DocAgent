@@ -29,13 +29,37 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: '#111318',
 };
-
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" style={{ backgroundColor: '#111318' }} suppressHydrationWarning>
       <head>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('docagent-theme');
+                  var theme = saved || 'dark';
+                  var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.style.backgroundColor = '#111318';
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.style.backgroundColor = '#f4f6fb';
+                  }
+                } catch (e) {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.style.backgroundColor = '#111318';
+                }
+              })();
+            `,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -47,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>
+      <body style={{ backgroundColor: '#111318' }}>
         <ThemeProvider>
           <AuthProvider>
             <ConditionalShell>{children}</ConditionalShell>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
@@ -11,8 +11,8 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'light',
-  resolvedTheme: 'light',
+  theme: 'dark',
+  resolvedTheme: 'dark',
   setTheme: () => {},
 });
 
@@ -21,7 +21,7 @@ export function useTheme() {
 }
 
 function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return 'dark';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -29,17 +29,19 @@ function applyTheme(resolved: 'light' | 'dark') {
   const html = document.documentElement;
   if (resolved === 'dark') {
     html.classList.add('dark');
+    html.style.backgroundColor = '#111318';
   } else {
     html.classList.remove('dark');
+    html.style.backgroundColor = '#f4f6fb';
   }
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setThemeState] = useState<Theme>('dark');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
-    const saved = (localStorage.getItem('docagent-theme') as Theme) || 'light';
+    const saved = (localStorage.getItem('docagent-theme') as Theme) || 'dark';
     const resolved = saved === 'system' ? getSystemTheme() : saved;
     setThemeState(saved);
     setResolvedTheme(resolved);

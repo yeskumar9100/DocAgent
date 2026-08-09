@@ -262,6 +262,7 @@ html.dark [class*="bg-white/"] { background-color: rgba(38, 48, 68, 0.7) !import
 
 html, body {
   height: 100%;
+  background-color: #111318;
 }
 
 
