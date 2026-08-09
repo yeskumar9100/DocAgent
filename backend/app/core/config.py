@@ -34,8 +34,9 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_file_size_mb: int = 25
 
-    # CORS
-    cors_origins: str = "http://localhost:3000,http://localhost:3001"
+    # CORS — comma-separated list of allowed origins
+    # Includes deployed Vercel frontend and local dev servers
+    cors_origins: str = "https://doc-agent-nu.vercel.app,http://localhost:3000,http://localhost:3001"
 
     @property
     def cors_origins_list(self) -> List[str]:
