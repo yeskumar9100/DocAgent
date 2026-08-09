@@ -1,108 +1,111 @@
-# DocAgent
+# DocAgent — AI Document Assistant
 
-An AI document assistant that lets you upload PDFs/DOCX/TXT files and ask questions about them in natural language — answers come back grounded in your documents, with clickable citations pointing to the exact source page and chunk.
+An AI document assistant that lets you upload PDFs, DOCX, and TXT files and ask questions about them in natural language — answers come back grounded in your documents with verified clickable citations pointing to the exact source page and chunk.
 
-Built with a Retrieval-Augmented Generation (RAG) pipeline: document chunking → embeddings → FAISS similarity search → LLM generation, with support for multiple AI providers and automatic fallback if one is rate-limited.
+Built with a Retrieval-Augmented Generation (RAG) pipeline: document chunking → embeddings → FAISS similarity search → LLM generation, featuring multi-provider routing with automatic LLM fallback and an ultra-premium **Liquid Glass Dark** design system.
 
-**Live demo:** _add your Vercel URL here once deployed_
-**Repo:** https://github.com/yeskumar9100/DocAgent
-
----
-
-## Features
-
-- **Upload & chat** — drop in a PDF, DOCX, or TXT file and ask questions about it immediately
-- **Multi-document chat** — scope a conversation to one or several uploaded documents at once
-- **Grounded answers with citations** — every answer links back to the exact page/chunk it came from, viewable in the citation panel
-- **Multi-provider support** — NVIDIA (default), OpenAI, Anthropic, and Google Gemini, with automatic LLM fallback if your top-priority provider is rate-limited or unavailable
-- **Embedding pinning** — each document remembers which provider/model embedded it, so retrieval never breaks from mismatched vector spaces (see [Key Design Decisions](#key-design-decisions))
-- **Encrypted key storage** — API keys for any provider are encrypted at rest and never re-displayed in full after saving
-- **Document library** — manage, view, and delete previously uploaded documents
-- **Installable on mobile** — works as a Progressive Web App; add it to your phone's home screen like a native app
+- **Live Demo:** [https://doc-agent-nu.vercel.app](https://doc-agent-nu.vercel.app)
+- **Repository:** [https://github.com/yeskumar9100/DocAgent](https://github.com/yeskumar9100/DocAgent)
 
 ---
 
-## Architecture
+## 🌟 Key Features
+
+- 📄 **Upload & Chat** — Drop in PDF, DOCX, or TXT files and query them immediately.
+- 📚 **Multi-Document RAG** — Select one or multiple documents simultaneously to query across your library.
+- 🎯 **Verifiable Citations** — Every generated answer includes clickable citation pills linking directly to source text chunks.
+- ⚡ **Multi-Provider Routing & Fallback** — Integrates NVIDIA NIM (default), OpenAI, Anthropic Claude, and Google Gemini with automatic LLM fallback if rate-limited.
+- 📌 **Embedding Pinning** — Documents preserve the exact provider and vector model used to embed them, preventing mismatched vector space errors.
+- 🔐 **Encrypted Key Storage** — Provider API keys are encrypted at rest using AES-128-CBC (Fernet) and never displayed in full.
+- 👤 **Account & Guest Management** — Settings section with account profile details, guest session support, and explicit Log Out / Exit actions.
+- 💎 **Liquid Glass Dark UI** — Translucent deep glass modules with simulate beveled inner borders, squircle geometry, and typography powered by *Hanken Grotesk*, *Inter*, and *Geist*.
+- 📱 **Zero-Flicker Mobile PWA** — Installable Progressive Web App with maskable icons, zero-FOUC launch sequence, and optimized mobile touch navigation.
+
+---
+
+## 🏗️ Architecture
 
 ```
-                     ┌─────────────────────┐
-                     │   Next.js Frontend   │
-                     │  (Chat / Upload /    │
-                     │  Documents / Settings)│
-                     └──────────┬───────────┘
-                                │ REST (JSON)
-                     ┌──────────▼───────────┐
-                     │    FastAPI Backend    │
-                     └──────────┬───────────┘
-              ┌─────────────────┼─────────────────┐
-              │                 │                 │
-    ┌─────────▼────────┐ ┌──────▼──────┐ ┌────────▼────────┐
-    │  Document parsing │ │  Provider   │ │  Encrypted key   │
-    │  → chunking →     │ │  Router     │ │  store (Fernet)  │
-    │  embeddings →     │ │ (LLM        │ │                  │
-    │  FAISS index      │ │  fallback)  │ │                  │
-    └─────────┬────────┘ └──────┬──────┘ └──────────────────┘
-              │                 │
-    ┌─────────▼────────┐ ┌──────▼──────────────────┐
-    │   FAISS vector    │ │  NVIDIA · OpenAI ·       │
-    │   store (per doc) │ │  Anthropic · Google      │
-    └───────────────────┘ └──────────────────────────┘
+                     ┌────────────────────────┐
+                     │    Next.js Frontend    │
+                     │  (Vercel Deployment)   │
+                     └───────────┬────────────┘
+                                 │ REST (JSON / CORS)
+                     ┌───────────▼────────────┐
+                     │     FastAPI Backend    │
+                     │  (Render Deployment)   │
+                     └───────────┬────────────┘
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+    ┌─────────▼────────┐  ┌──────▼──────┐  ┌────────▼────────┐
+    │ Document Parsing │  │  Provider   │  │  Encrypted Key  │
+    │ → Chunking →     │  │  Router     │  │  Store (Fernet) │
+    │ Embeddings →     │  │ (LLM        │  │                 │
+    │ FAISS Index      │  │  Fallback)  │  │                 │
+    └─────────┬────────┘  └──────┬──────┘  └─────────────────┘
+              │                  │
+    ┌─────────▼────────┐  ┌──────▼──────────────────┐
+    │  FAISS Vector    │  │  NVIDIA · OpenAI ·      │
+    │  Store (per doc) │  │  Anthropic · Google     │
+    └──────────────────┘  └─────────────────────────┘
 ```
 
-**Request flow:**
-1. `POST /upload` — file is parsed, split into overlapping chunks, embedded (using the currently-configured embedding provider), and indexed in FAISS. The provider/model used is stored alongside the document record.
-2. `POST /ask` — the question is embedded using the *same* provider that indexed the target document(s), FAISS returns the top-k most similar chunks, and those chunks + the question are sent to the LLM (via the Provider Router) to generate a grounded answer with source citations.
+### Request Flow
+1. **`POST /upload`**: File text is extracted, split into overlapping chunks, embedded using the configured provider, and indexed in FAISS. The provider and embedding model parameters are pinned to the document record.
+2. **`POST /ask`**: The query is embedded using the *same* provider that indexed the target document(s). FAISS retrieves top-k relevant chunks, which are sent to the LLM (via the `ProviderRouter`) to generate a grounded response with source citations.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 14 (App Router), Tailwind CSS |
-| Backend | FastAPI, async SQLAlchemy |
-| Vector search | FAISS |
-| Encryption | Fernet (AES-128-CBC + HMAC-SHA256) |
-| LLM/Embedding providers | NVIDIA NIM, OpenAI, Anthropic, Google Gemini |
-| Design | Google Stitch (UI design), Antigravity IDE (implementation) |
+| **Frontend** | Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS |
+| **Backend** | FastAPI 0.115, Python 3.11, async SQLAlchemy, aiosqlite |
+| **Vector Engine** | FAISS (`faiss-cpu`) |
+| **Security** | Fernet AES-128-CBC encryption for API credentials at rest |
+| **LLM Providers** | NVIDIA NIM (default), OpenAI GPT-4o, Anthropic Claude 3.5, Google Gemini 1.5 |
+| **Design System** | **Liquid Glass Dark** (Deep Glass panels, 28px squircles, Hanken Grotesk & Geist fonts) |
+| **PWA & Web** | PWA Manifest with maskable icons, zero-FOUC inline theme script |
 
 ---
 
-## Prerequisites
+## 📋 Prerequisites
 
-- Python 3.10+
-- Node.js 18+
-- An NVIDIA API key from [build.nvidia.com](https://build.nvidia.com) (required as the default provider; other providers are optional and configurable later from the Settings page)
+- **Python 3.11** (recommended; pinned via `backend/runtime.txt`)
+- **Node.js 18+**
+- An **NVIDIA API key** from [build.nvidia.com](https://build.nvidia.com) (default provider)
 
 ---
 
-## Setup
+## 🚀 Quick Start & Setup
 
-### 1. Backend
+### 1. Backend Setup
 
 ```bash
 cd backend
 
-# Create virtual environment
+# Create & activate virtual environment
 python -m venv venv
 .\venv\Scripts\activate     # Windows
 # source venv/bin/activate  # Linux/Mac
 
-# Install dependencies
+# Install pinned dependencies
 pip install -r requirements.txt
 
-# Configure environment
+# Configure environment variables
 copy .env.example .env      # Windows
 # cp .env.example .env      # Linux/Mac
-# Edit .env: fill in SECRET_KEY (see instructions in file) and NVIDIA_API_KEY
 
-# Start the API server
+# Edit .env and set SECRET_KEY and NVIDIA_API_KEY
+
+# Launch FastAPI dev server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-API docs (Swagger UI): **http://localhost:8000/docs**
+- **API Documentation (Swagger UI):** `http://localhost:8000/docs`
 
-### 2. Frontend
+### 2. Frontend Setup
 
 ```bash
 cd frontend
@@ -110,163 +113,99 @@ cd frontend
 # Install dependencies
 npm install
 
-# Configure environment
-copy .env.local.example .env.local    # if present, otherwise create manually
-# Set NEXT_PUBLIC_API_URL=http://localhost:8000
+# Configure local API URL
+# .env.local: NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# Start dev server
+# Launch Next.js dev server
 npm run dev
 ```
 
-App: **http://localhost:3000**
-
-### 3. Verify it's working
-
-1. Open http://localhost:3000/upload and upload a test PDF.
-2. Go to the Chat screen and ask a question about it.
-3. Confirm the answer includes citation pills that link back to the source page/chunk in the citation panel.
-4. Check http://localhost:8000/docs to confirm `/upload`, `/ask`, `/documents`, and `/settings/providers` are all responding.
+- **Web Application:** `http://localhost:3000`
 
 ---
 
-## Environment Variables
+## ⚙️ Environment Variables
 
 ### Backend (`backend/.env`)
 
 | Variable | Required | Description |
 |---|---|---|
-| `SECRET_KEY` | Yes | Symmetric key used to encrypt/decrypt provider API keys at rest. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Never commit this. |
-| `NVIDIA_API_KEY` | Yes | Default LLM/embedding provider. Get one from build.nvidia.com. |
-| `OPENAI_API_KEY` | No | Optional — can also be added later via the Settings page instead. |
-| `ANTHROPIC_API_KEY` | No | Optional — same as above. |
-| `GOOGLE_API_KEY` | No | Optional — same as above. |
-| `DATABASE_URL` | No | Defaults to local SQLite if unset. Set to a Postgres connection string for production deployments (recommended — see [Deployment](#deployment)). |
+| `SECRET_KEY` | Yes | Fernet symmetric key for encrypting provider API keys at rest. Generate via `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. |
+| `NVIDIA_API_KEY` | Yes | Default provider key from build.nvidia.com. |
+| `OPENAI_API_KEY` | No | Optional — can also be added via the Settings UI. |
+| `ANTHROPIC_API_KEY` | No | Optional — added via Settings UI. |
+| `GOOGLE_API_KEY` | No | Optional — added via Settings UI. |
+| `CORS_ORIGINS` | Yes | Comma-separated allowed origins (e.g. `https://doc-agent-nu.vercel.app,http://localhost:3000`). |
 
 ### Frontend (`frontend/.env.local`)
 
 | Variable | Required | Description |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | Yes | Base URL of the FastAPI backend, e.g. `http://localhost:8000` locally or your deployed Render URL in production. |
+| `NEXT_PUBLIC_API_URL` | Yes | URL of backend API (`http://localhost:8000` locally, or deployed Render URL). |
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 DocAgent/
 ├── backend/
 │   ├── app/
-│   │   ├── api/               # FastAPI route handlers
-│   │   │   ├── upload.py         # POST /upload
-│   │   │   ├── ask.py            # POST /ask (RAG)
-│   │   │   ├── documents.py      # GET/DELETE /documents
-│   │   │   └── settings.py       # Provider CRUD
-│   │   ├── core/
-│   │   │   ├── config.py         # Pydantic settings
-│   │   │   ├── encryption.py     # Fernet key encryption
-│   │   │   └── rag.py            # Text extraction, chunking, FAISS
-│   │   ├── db/
-│   │   │   ├── database.py       # Async SQLAlchemy
-│   │   │   └── models.py         # Document, ProviderConfig
-│   │   ├── providers/
-│   │   │   ├── base.py           # Abstract LLMProvider
-│   │   │   ├── nvidia.py         # NVIDIA NIM (default)
-│   │   │   ├── openai_provider.py
-│   │   │   ├── anthropic_provider.py
-│   │   │   ├── google_provider.py
-│   │   │   └── router.py         # ProviderRouter with fallback
-│   │   └── main.py               # FastAPI app factory
-│   ├── requirements.txt
-│   └── .env.example
+│   │   ├── api/               # FastAPI endpoint routes (/upload, /ask, /documents, /settings)
+│   │   ├── core/              # Config, Fernet encryption, RAG pipeline & FAISS
+│   │   ├── db/                # SQLAlchemy async models & SQLite database
+│   │   ├── providers/         # ProviderRouter, NVIDIA, OpenAI, Anthropic, Google implementations
+│   │   └── main.py            # FastAPI app factory & CORS middleware
+│   ├── runtime.txt            # Python version pin (python-3.11.9 for Render)
+│   └── requirements.txt       # Stable wheel-pinned Python dependencies
 │
 └── frontend/
-    ├── src/
-    │   ├── app/                  # Next.js App Router pages
-    │   │   ├── upload/              # Document upload
-    │   │   ├── chat/                # AI chat + citations
-    │   │   ├── documents/           # Document library
-    │   │   └── settings/            # Provider configuration
-    │   ├── components/
-    │   │   ├── layout/              # Sidebar / navigation
-    │   │   ├── upload/               # UploadArea
-    │   │   ├── chat/                 # ChatWindow, MessageBubble, CitationPanel
-    │   │   ├── documents/            # DocumentLibrary
-    │   │   ├── settings/             # SettingsPage, ProviderCard
-    │   │   └── states/               # EmptyState, LoadingState, ErrorState
-    │   └── lib/
-    │       └── api.ts                # Typed API client
-    └── .env.local
+    ├── public/                # PWA icons, logo assets & manifest.json
+    └── src/
+        ├── app/               # Next.js App Router (Dashboard, Upload, Chat, Documents, Settings)
+        ├── components/        # Glassmorphic UI components, floating navbar, sidebar, cards
+        ├── context/           # ThemeProvider (Dark/Light) & AuthProvider (Guest/Login)
+        └── lib/               # Typed API client
 ```
 
 ---
 
-## API Reference
+## 🔌 API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/upload` | Upload a document (PDF/DOCX/TXT), chunk it, embed it, and index it in FAISS |
-| `POST` | `/ask` | Ask a question, scoped to one or more uploaded documents |
-| `GET` | `/documents` | List all uploaded documents with metadata |
-| `DELETE` | `/documents/{id}` | Remove a document and its vector index |
-| `POST` | `/settings/providers` | Add or update an encrypted API key for a provider |
-| `GET` | `/settings/providers` | List configured providers and their status (never returns raw keys) |
-| `DELETE` | `/settings/providers/{provider}` | Remove a configured provider |
-| `GET` | `/health` | Health check |
-
-Full interactive documentation is available at `/docs` (Swagger UI) once the backend is running.
+| `POST` | `/upload` | Upload PDF/DOCX/TXT file, chunk, embed, and index into FAISS |
+| `POST` | `/ask` | Execute RAG query against selected document(s) with citations |
+| `GET` | `/documents` | List uploaded documents, size, status, and chunk counts |
+| `DELETE` | `/documents/{id}` | Delete document and remove its vector index |
+| `GET` | `/settings/providers` | List configured providers and connection status |
+| `POST` | `/settings/providers` | Save encrypted API key for a provider |
+| `DELETE` | `/settings/providers/{p}` | Remove a provider configuration |
+| `GET` | `/health` | Uptime and provider health check |
 
 ---
 
-## Key Design Decisions
+## 🌐 Deployment
 
-### Embedding Pinning
-
-Each document stores which provider and model embedded it. When answering a question, DocAgent always uses the **same embedding provider** that indexed the document — it never falls back to a different one for embeddings. This matters because vectors from different embedding models live in different, non-comparable vector spaces; mixing them silently breaks similarity search. If you switch embedding providers in Settings, existing documents keep using their original provider until you explicitly re-embed them.
-
-### Provider Fallback (LLM only)
-
-The `ProviderRouter` tries configured providers in priority order, but **only for the generation step** — never for embeddings, for the reason above. On a rate-limit or quota error, it backs off that provider for 60 seconds and automatically retries the next one in the priority list. If every configured provider fails, the request returns an error rather than silently degrading.
-
-### Key Security
-
-API keys are encrypted with Fernet (AES-128-CBC + HMAC-SHA256) before being stored. The decryption key (`SECRET_KEY`) lives only in the environment — never in the database alongside the ciphertext, and never in source control. The frontend never receives a saved key back in full; only a masked `••••••••last4` representation is returned after saving.
-
----
-
-## Deployment
-
-DocAgent deploys as two services: the frontend on Vercel, the backend on Render.
-
-| Component | Platform | Notes |
+| Service | Platform | Link / Config |
 |---|---|---|
-| Frontend | [Vercel](https://vercel.com) | Free tier, connects directly to this repo's `frontend/` folder |
-| Backend | [Render](https://render.com) | Free tier available; spins down after 15 min idle (cold start ~30-50s on first request after inactivity) |
-| Vector DB / metadata | Consider [Supabase](https://supabase.com) (Postgres + `pgvector`) for production | Render's free tier has no persistent disk, so local SQLite/FAISS files do not survive a restart — either accept re-indexing on cold start, or move to a hosted persistent store |
+| **Frontend** | [Vercel](https://vercel.com) | [https://doc-agent-nu.vercel.app](https://doc-agent-nu.vercel.app) |
+| **Backend** | [Render](https://render.com) | Root directory: `backend`, Python 3.11 runtime |
 
-**Steps:**
-1. Deploy `backend/` to Render as a Web Service. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Add `SECRET_KEY` and `NVIDIA_API_KEY` (and any other provider keys) as environment secrets.
-2. Deploy `frontend/` to Vercel. Set `NEXT_PUBLIC_API_URL` to your Render backend URL.
-3. In the backend's CORS configuration, allow your Vercel domain as an origin.
-4. Test the full upload → ask → cite flow on the live URLs before considering it done — CORS and cold-start behavior only show up in production, not in local dev.
-
-### Using it on mobile
-
-No app store needed — DocAgent works as an installable Progressive Web App:
-- **iPhone (Safari):** open the deployed site → Share icon → "Add to Home Screen"
-- **Android (Chrome):** open the deployed site → ⋮ menu → "Add to Home Screen" / "Install app"
+### Render Deployment Notes
+- `backend/runtime.txt` pins **`python-3.11.9`** to prevent Render from using unreleased Python versions that require source compilation.
+- `requirements.txt` pins stable package wheels (`fastapi==0.115.0`, `pydantic==2.9.2`, `pydantic-core==2.23.4`) to ensure pre-built wheels are installed without Rust compilation errors.
 
 ---
 
-## Roadmap
+## 📱 Mobile PWA Installation
 
-- [ ] Document outline/preview panel in the chat sidebar
-- [ ] Full PWA manifest + service worker for offline asset caching
-- [ ] Persistent vector storage via Supabase/pgvector for production deployments
-- [ ] Retrieval evaluation harness (Hit Rate@k / MRR@k) to benchmark chunking strategies and reranking
-- [ ] Optional cross-encoder reranker as a second retrieval stage
+Install DocAgent directly to your phone's home screen with zero app store overhead:
+- **iOS (Safari):** Open [https://doc-agent-nu.vercel.app](https://doc-agent-nu.vercel.app) → Share → **Add to Home Screen**
+- **Android (Chrome):** Open [https://doc-agent-nu.vercel.app](https://doc-agent-nu.vercel.app) → `⋮` Menu → **Install App** / **Add to Home Screen**
 
 ---
 
-## License
+## 📄 License
 
-_Add a license (e.g. MIT) here if you intend for others to use or contribute to this code._
+Distributed under the MIT License.
